@@ -12,12 +12,12 @@ camera.framerate = 30
 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(21, GPIO.IN)
+GPIO.setup(4, GPIO.IN)
 prevState = 1
 state = 1
 
 while 1:
-    state = GPIO.input(21)
+    state = GPIO.input(4)
     if (state == 0):
         print("Water Detected")
         state = 0
