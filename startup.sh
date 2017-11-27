@@ -8,4 +8,6 @@ echo none | sudo tee /sys/class/leds/led0/trigger # Set the Pi Zero ACT LED trig
 
 echo 1 | sudo tee /sys/class/leds/led0/brightness # Turn off the Pi Zero ACT LED.
 
+iwconfig wlan0 txpower off          # turn off USB peripheral power
+
 python /filepath/healthyhands.py&   # run program
