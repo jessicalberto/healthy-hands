@@ -26,6 +26,9 @@ water = OFF
 waterOn = False
 soapOn = False
 recordCount = 0
+timeCount = 0
+soapCount = 0
+debounceTime = 0
 
 
 while 1:
@@ -34,46 +37,50 @@ while 1:
 
     # Water Sensor
     if(prevWater == OFF and water == ON):
-        print("Water Detected")
         waterOn = True
         
     if(prevWater == ON and water == OFF):
-        print("Water Stopped")
         waterOn = False
         
     prevWater = water
     
-    #Soap Sensor
-    if(prevSoap == OFF and soap == ON):
-        print("Soap Start")
-
+    #Soap Sensor Logic
+    if(prevSoap == OFF and soap == ON and time.time() > debounceTime + 1):
         soapOn = True
+        soapCount = soapCount + 1
+        debounceTime = time.time()
 
         
     if(prevSoap == ON and soap == OFF):
-        print("Soap Stopped")
         soapOn = False
         
     prevSoap = soap
-    
+         
     # Recording Logic
-    if((waterOn is True or soapOn is True) and recordCount == 0):
-        print("Start")
+    if((waterOn is True) and recordCount == 0):
+        if(waterOn is True):
+            print("Water Sensor Activated")
+        timeCount = time.time();
         recordCount = 1
         camera.start_recording(date + '.h264')
         
-    if((waterOn is False and soapOn is False) and recordCount == 1):
+    if((waterOn is False) and (recordCount == 1) and (time.time() > timeCount + 10)):
         camera.stop_recording()
-        print("Stop Recording")
+        print("Water Sensor Stopped")
         recordCount = 0
         prevSoap = OFF
         soap = OFF
         water = OFF
         prevWater = OFF
+        timeCount = 0
         date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+        print("Soap Count: ")
+        print(soapCount);
         continue
 
 print("Camera Done")
+print("Soap Count: ")
+print(soapCount);
         
 ##camera.start_recording(filename)
 ##sleep(5)
