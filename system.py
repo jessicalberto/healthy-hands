@@ -30,7 +30,14 @@ timeCount = 0
 soapCount = 0
 debounceTime = 0
 
-
+def checkPath():
+    currentDatePath = "/home/pi/Documents/Data/" + datetime.datetime.now().strftime("%m_%d_%Y")
+    if(os.path.exists(currentDatePath) is True):
+        return True
+    else:
+        os.mkdir(currentDatePath)
+        return False
+    
 while 1:
     water = GPIO.input(5)
     soap = GPIO.input(6)
@@ -59,13 +66,18 @@ while 1:
     # Recording Logic
     if((waterOn is True) and recordCount == 0):
         if(waterOn is True):
-            print("Water Sensor Activated")
+            checkPath()
+            print("Water Sensor On")
         timeCount = time.time();
         recordCount = 1
         camera.start_recording(date + '.h264')
+        filename = date + '.h264'
+        
         
     if((waterOn is False) and (recordCount == 1) and (time.time() > timeCount + 10)):
         camera.stop_recording()
+        savePath = "/home/pi/Documents/Data/" + datetime.datetime.now().strftime("%m_%d_%Y")
+        completeVideo = os.path.join(savePath, filename)
         print("Water Sensor Stopped")
         recordCount = 0
         prevSoap = OFF
@@ -82,13 +94,5 @@ print("Camera Done")
 print("Soap Count: ")
 print(soapCount);
         
-##camera.start_recording(filename)
-##sleep(5)
-##camera.stop_recording()
-##completed_video = os.path(save_path, filename)
-
-##camera.start_recording('my_video.h264')
-##camera.wait_recording(60)
-##camera.stop_recording()
 
 
