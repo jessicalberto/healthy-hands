@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import csv
 import datetime
 import time
 import os
@@ -12,44 +12,80 @@ camera = picamera.PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 30
 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+outputFile = "/home/pi/Documents/Data/" + "Output.csv"
 
+FLOW_SENSOR = 5
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 prevSoap = 1
 soap = 1
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(5, GPIO.IN)
+GPIO.setup(FLOW_SENSOR, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 prevWater = OFF
 water = OFF
 
-waterOn = False
+global waterOn
+waterOn= False
 soapOn = False
 recordCount = 0
+global timeCount
 timeCount = 0
 soapCount = 0
 debounceTime = 0
 
 def checkPath():
-    currentDatePath = "/home/pi/Documents/Data/" + datetime.datetime.now().strftime("%m_%d_%Y")
+    currentDatePath = "/home/pi/Documents/Data/" + "OutputData.csv"
     if(os.path.exists(currentDatePath) is True):
         return True
     else:
         os.mkdir(currentDatePath)
         return False
     
-while 1:
-    water = GPIO.input(5)
-    soap = GPIO.input(6)
+def writeToCSV(soapNum):
+    if os.path.exists(outputFile) is True:
+        
+        date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+        waterNum = 1
+        with open(outputFile, 'w') as outcsv:
+             writer = csv.writer(outcsv)
+             writer.writerow([date, waterNum, soapNum])
+        print("Wrote to file")
 
-    # Water Sensor
-    if(prevWater == OFF and water == ON):
+    else:
+        with open(outputFile, 'w') as outcsv:
+            writer = csv.writer(outcsv)
+            writer.writerow(['Date-Time'.encode(), 'Number of Water Events'.encode(), 'Number of Soap Events'.encode()])
+
+        print("Created file")
+
+global flowCount
+flowCount = 0
+
+def countPulse(channel):
+    global flowCount
+    global waterOn
+    global filename
+    global timeCount
+    flowCount = flowCount + 1
+    print(flowCount)
+    
+    if(flowCount <= 1):
+        checkPath()
         waterOn = True
-        
-    if(prevWater == ON and water == OFF):
-        waterOn = False
-        
-    prevWater = water
+        print("Water Sensor On")
+        timeCount = time.time();
+        print(timeCount);
+        recordCount = 1
+        camera.start_recording(date + '.h264')
+        print("Camera started")
+        filename = date + '.h264'
+    
+GPIO.add_event_detect(FLOW_SENSOR, GPIO.FALLING, callback = countPulse)
+    
+while True:
+    
+    soap = GPIO.input(6)
     
     #Soap Sensor Logic
     if(prevSoap == OFF and soap == ON and time.time() > debounceTime + 1):
@@ -62,19 +98,10 @@ while 1:
         soapOn = False
         
     prevSoap = soap
-         
-    # Recording Logic
-    if((waterOn is True) and recordCount == 0):
-        if(waterOn is True):
-            checkPath()
-            print("Water Sensor On")
-        timeCount = time.time();
-        recordCount = 1
-        camera.start_recording(date + '.h264')
-        filename = date + '.h264'
-        
-        
-    if((waterOn is False) and (recordCount == 1) and (time.time() > timeCount + 10)):
+                      
+    if((waterOn is True) and (time.time() > timeCount + 10)):
+        print("Stopped camera recording")
+        print(flowCount)
         camera.stop_recording()
         savePath = "/home/pi/Documents/Data/" + datetime.datetime.now().strftime("%m_%d_%Y")
         completeVideo = os.path.join(savePath, filename)
@@ -82,17 +109,21 @@ while 1:
         recordCount = 0
         prevSoap = OFF
         soap = OFF
-        water = OFF
-        prevWater = OFF
+        water = 0
+        flowCount = 0
+        waterOn = False
+        prevWater = 0
         timeCount = 0
         date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+        writeToCSV(soapCount)
         print("Soap Count: ")
         print(soapCount);
-        continue
+        print(time.time());
+        soapCount = 0
+        
 
 print("Camera Done")
 print("Soap Count: ")
 print(soapCount);
         
-
 
