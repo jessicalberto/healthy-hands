@@ -1,20 +1,31 @@
-define RESISTOR 10000 #This should be the same value of the used resistor  
-define RUBBERCORDPIN A0  #This is the pin where the cord is connected to
+#!/usr/bin/env python
+import time
+import Adafruit_ADS1x15
 
-void loop(void) {
-    int value;
-    int raw = 0;          # Raw input value
-    int vin = 5;          # Store input voltage, this should be 5
-    float vout = 0;        # Store output voltage
-    float refresistor1 = 10;  # Variable to store the R1 value
-    float refresistor2 = 0;  # Value is determined by the voltage that falls across after it has been measured.  
-    float buffer = 0;      # Buffer variable for calculation
-    value = analogRead(RUBBERCORDPIN);     #Read the value
-    vout = (5.0 / 1023.0) * value;         #Calculates the voltage
-    buffer = (vin / vout) - 1;
-    refresistor2 = refresistor1 / buffer;
-    print("Voltage: " + vout);
-    #println(vout);                  # Outputs the information
-    print("Resistance: " + refresistor2);  
-    #print(refresistor2);  
- }
+
+# Create an ADS1115 ADC (16 bit) instance.
+adc = Adafruit_ADS1x15.ADS1115()
+
+GAIN = 1
+resistor = 1000
+vin = 3.3
+raw = 0
+vout = 0
+refresistor1 = 10
+refresistor2 = 0
+buffer = 0
+adc.start_adc(0, gain= GAIN)
+
+start = time.time()
+while (time.time() - start) <= 25.0:
+
+    value = adc.get_last_result()
+    vout = (vin / resistor)*value
+    buffer = (vin/vout) -1
+    refesistor2 = refresistor1 / buffer
+    print('Voltage:{0}'.format(vout))
+    print('Resistance:{0}'.format(refresistor2))
+    print('Channel 0:{0}'.format(value))
+    time.sleep(0.5)
+    
+adc.stop_adc()
