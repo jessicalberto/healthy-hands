@@ -5,9 +5,23 @@ import time
 import os
 import RPi.GPIO as GPIO
 import picamera
+import time
+import Adafruit_ADS1x15
 
-ON = 0
-OFF = 1
+
+# Create an ADS1115 ADC (16 bit) instance.
+adc = Adafruit_ADS1x15.ADS1115()
+
+GAIN = 1
+resistor = 1000
+vin = 3.3
+raw = 0
+vout = 0
+refresistor1 = 10
+refresistor2 = 0
+buffer = 0
+
+
 camera = picamera.PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 30
@@ -17,13 +31,15 @@ outputFile = "/home/pi/Documents/Data/" + "Output.csv"
 FLOW_SENSOR = 5
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
-prevSoap = 1
-soap = 1
+global prevSoap
+prevSoap = False
+global soap
+soap = False
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(FLOW_SENSOR, GPIO.IN, pull_up_down = GPIO.PUD_UP)
-prevWater = OFF
-water = OFF
+prevWater = False
+water = False
 
 global waterOn
 waterOn= False
@@ -33,6 +49,7 @@ global timeCount
 timeCount = 0
 soapCount = 0
 debounceTime = 0
+soapDebounceTime = 0
 
 
     
@@ -70,6 +87,8 @@ def countPulse(channel):
     flowCount = flowCount + 1
     print(flowCount)
     
+    
+    
     if(flowCount <= 1):
         waterOn = True
         startRecording = True
@@ -92,16 +111,27 @@ GPIO.add_event_detect(FLOW_SENSOR, GPIO.FALLING, callback = countPulse)
     
 while True:
     
-    soap = GPIO.input(6)
+    adc.start_adc(0, gain= GAIN)
+    value = adc.get_last_result()
+    vout = (vin / resistor)*value
+    buffer = (vin/vout) -1
+    refesistor2 = refresistor1 / buffer
+    
+    if(vout > 49):
+        soap = False
+    else:
+        soap = True
+        #if (prevSoap == False):
+            #print("Soap in Use")
+    adc.stop_adc()
     
     #Soap Sensor Logic
-    if(prevSoap == OFF and soap == ON and time.time() > debounceTime + 1):
+    if(prevSoap == False and soap == True and (time.time() > soapDebounceTime + 0.3)):
+        soapDebounceTime = time.time()
         soapOn = True
         soapCount = soapCount + 1
-        debounceTime = time.time()
-
         
-    if(prevSoap == ON and soap == OFF):
+    if(prevSoap == True and soap == False):
         soapOn = False
         
     prevSoap = soap
@@ -115,8 +145,8 @@ while True:
         
         print("Water Sensor Stopped")
         recordCount = 0
-        prevSoap = OFF
-        soap = OFF
+        prevSoap = False
+        soap = False
         water = 0
         flowCount = 0
         waterOn = False
@@ -130,8 +160,6 @@ while True:
         print(date)
         soapCount = 0
         
-
-print("Camera Done")
-print("Soap Count: ")
-print(soapCount);
         
+
+
