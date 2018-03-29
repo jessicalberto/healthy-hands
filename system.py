@@ -64,13 +64,13 @@ def writeToCSV(soapNum, rotations):
             waterNum = 1
             with open(outputFile, 'a') as outcsv:
                  writer = csv.writer(outcsv)
-                 writer.writerow([date, waterNum, soapNum, rotations/10])
+                 writer.writerow([date, waterNum, soapNum, rotations/10, rotations*1000/4380])
             print("Wrote to file Output.csv")
 
     else:
         with open(outputFile, 'w') as outcsv:
             writer = csv.writer(outcsv)
-            writer.writerow(['Date-Time', 'Number of Water Events', 'Number of Soap Events', 'Rotations/sec'])
+            writer.writerow(['Date-Time', 'Number of Water Events', 'Number of Soap Events', 'Rotations/sec', 'Total Water Use (mL)'])
 
         print("Created new file Output.csv")
 
@@ -86,7 +86,7 @@ def countPulse(channel):
     startRecording = False
     flowCount = flowCount + 1
     print(flowCount)
-    
+    timeCount = time.time()
     
     
     if(flowCount <= 1):
@@ -117,7 +117,7 @@ while True:
     buffer = (vin/vout) -1
     refesistor2 = refresistor1 / buffer
     
-    if(vout > 49):
+    if(vout > 44):
         soap = False
     else:
         soap = True
@@ -126,7 +126,7 @@ while True:
     adc.stop_adc()
     
     #Soap Sensor Logic
-    if(prevSoap == False and soap == True and (time.time() > soapDebounceTime + 0.3)):
+    if(prevSoap == False and soap == True and (time.time() > soapDebounceTime + 0.5)):
         soapDebounceTime = time.time()
         soapOn = True
         soapCount = soapCount + 1
@@ -136,7 +136,7 @@ while True:
         
     prevSoap = soap
                       
-    if((waterOn is True) and (time.time() > timeCount + 10)):
+    if((waterOn is True) and (time.time() > timeCount + 5)):
         print("Stopped camera recording")
         print("Total number of rotations:")
         print(flowCount)
