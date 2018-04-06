@@ -26,7 +26,7 @@ camera = picamera.PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 30
 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-outputFile = "/home/pi/Documents/Data/" + "Output.csv"
+outputFile = "/home/pi/Documents/Data/" + "OutputData.csv"
 
 FLOW_SENSOR = 5
 GPIO.setmode(GPIO.BCM)
@@ -46,6 +46,10 @@ waterOn= False
 soapOn = False
 recordCount = 0
 global timeCount
+global soapStartTime
+global soapEndTime
+soapStartTime = 0
+soapEndTime = 0
 timeCount = 0
 soapCount = 0
 debounceTime = 0
@@ -64,13 +68,13 @@ def writeToCSV(soapNum, rotations):
             waterNum = 1
             with open(outputFile, 'a') as outcsv:
                  writer = csv.writer(outcsv)
-                 writer.writerow([date, waterNum, soapNum, rotations/10, rotations*1000/4380])
+                 writer.writerow([date, round((rotations*1000/4380), 2), rotations/10, soapNum])
             print("Wrote to file Output.csv")
 
     else:
         with open(outputFile, 'w') as outcsv:
             writer = csv.writer(outcsv)
-            writer.writerow(['Date-Time', 'Number of Water Events', 'Number of Soap Events', 'Rotations/sec', 'Total Water Use (mL)'])
+            writer.writerow(['Date-Time', 'Total Water Use (mL)', 'Rotations/sec', 'Number of Soap Events', 'Soap Start Time', 'Soap End Time'])
 
         print("Created new file Output.csv")
 
@@ -117,7 +121,7 @@ while True:
     buffer = (vin/vout) -1
     refesistor2 = refresistor1 / buffer
     
-    if(vout > 44):
+    if(vout > 29):
         soap = False
     else:
         soap = True
@@ -128,11 +132,16 @@ while True:
     #Soap Sensor Logic
     if(prevSoap == False and soap == True and (time.time() > soapDebounceTime + 0.5)):
         soapDebounceTime = time.time()
+        soapStartTime = datetime.datetime.now().strftime("%H_%M_%S")
         soapOn = True
         soapCount = soapCount + 1
         
     if(prevSoap == True and soap == False):
+        soapEndTime = datetime.datetime.now().strftime("%H_%M_%S")
         soapOn = False
+        with open(outputFile, 'a') as outcsv:
+                 writer = csv.writer(outcsv)
+                 writer.writerow(['', '', '', '', soapStartTime, soapEndTime])
         
     prevSoap = soap
                       
