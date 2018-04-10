@@ -54,10 +54,10 @@ timeCount = 0
 soapCount = 0
 debounceTime = 0
 soapDebounceTime = 0
-
+soapTimeArray = []
 
     
-def writeToCSV(soapNum, rotations):
+def writeToCSV(soapTimeArray, soapNum, rotations):
     
     if os.path.exists(outputFile) is True:
         
@@ -69,6 +69,10 @@ def writeToCSV(soapNum, rotations):
             with open(outputFile, 'a') as outcsv:
                  writer = csv.writer(outcsv)
                  writer.writerow([date, round((rotations*1000/4380), 2), rotations/10, soapNum])
+                 i = 0
+                 while i < len(soapTimeArray) - 1:
+                     writer.writerow(['', '', '', '', soapTimeArray[i], soapTimeArray[i+1]])
+                     i = i + 2
             print("Wrote to file Output.csv")
 
     else:
@@ -98,7 +102,7 @@ def countPulse(channel):
         startRecording = True
         print("Water Sensor On")
         timeCount = time.time();
-        writeToCSV(0, 0);
+        writeToCSV([0,0], 0, 0);
         startRecording = False
         print(datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
         recordCount = 1
@@ -121,7 +125,7 @@ while True:
     buffer = (vin/vout) -1
     refesistor2 = refresistor1 / buffer
     
-    if(vout > 29):
+    if(vout > 26):
         soap = False
     else:
         soap = True
@@ -135,13 +139,13 @@ while True:
         soapStartTime = datetime.datetime.now().strftime("%H_%M_%S")
         soapOn = True
         soapCount = soapCount + 1
+        soapTimeArray.append(soapStartTime)
         
     if(prevSoap == True and soap == False):
         soapEndTime = datetime.datetime.now().strftime("%H_%M_%S")
         soapOn = False
-        with open(outputFile, 'a') as outcsv:
-                 writer = csv.writer(outcsv)
-                 writer.writerow(['', '', '', '', soapStartTime, soapEndTime])
+        soapTimeArray.append(soapEndTime)
+
         
     prevSoap = soap
                       
@@ -162,7 +166,8 @@ while True:
         prevWater = 0
         timeCount = 0
         date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-        writeToCSV(soapCount,rotations)
+        writeToCSV(soapTimeArray, soapCount,rotations)
+        soapTimeArray = []
         print("Soap Count: ")
         print(soapCount)
         print("Time:")
@@ -170,5 +175,4 @@ while True:
         soapCount = 0
         
         
-
 
