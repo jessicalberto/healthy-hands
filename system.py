@@ -25,7 +25,8 @@ buffer = 0
 camera = picamera.PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 30
-date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+
+
 outputFile = "/home/pi/Documents/Data/" + "OutputData.csv"
 
 FLOW_SENSOR = 5
@@ -64,7 +65,6 @@ def writeToCSV(soapTimeArray, soapNum, rotations):
         if startRecording is True:
             return;
         else:
-            date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
             waterNum = 1
             with open(outputFile, 'a') as outcsv:
                  writer = csv.writer(outcsv)
@@ -91,6 +91,7 @@ def countPulse(channel):
     global filename
     global timeCount
     global startRecording
+    global date
     startRecording = False
     flowCount = flowCount + 1
     print(flowCount)
@@ -102,9 +103,10 @@ def countPulse(channel):
         startRecording = True
         print("Water Sensor On")
         timeCount = time.time();
+        date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S") 
         writeToCSV([0,0], 0, 0);
         startRecording = False
-        print(datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
+
         recordCount = 1
         filename = date + '.h264'
         savePath = "/home/pi/Documents/Data/" + datetime.datetime.now().strftime("%m_%d_%Y")
@@ -165,7 +167,6 @@ while True:
         waterOn = False
         prevWater = 0
         timeCount = 0
-        date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
         writeToCSV(soapTimeArray, soapCount,rotations)
         soapTimeArray = []
         print("Soap Count: ")
@@ -173,6 +174,3 @@ while True:
         print("Time:")
         print(date)
         soapCount = 0
-        
-        
-
